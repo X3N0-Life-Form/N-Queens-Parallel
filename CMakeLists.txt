@@ -14,16 +14,24 @@ add_definitions(
   -O2
 )
 
+set(NUM_THREADS
+  8
+)
+
 #
 # MPI
 #
 
 set(MPI_SRC
-  mpi/n-queens.cpp
+  mpi/n-queens-mpi.cpp
 )
 
-add_executable(n-queens-mpi
-  ${MPI_SRC}
+#add_executable(n-queens-mpi.out
+#  ${MPI_SRC}
+#)
+
+add_custom_target(n-queens-mpi.out
+  mpic++ ${MPI_SRC} -o n-queens-mpi.out
 )
 
 add_custom_target(run_mpi
@@ -35,13 +43,13 @@ add_custom_target(run_mpi
 #
 
 set(OMP_SRC
-  omp/n-queens.cpp
+  omp/n-queens-omp.cpp
 )
 
 set(OMP_REQ
   -fopenmp
 )
 
-add_executable(n-queens-openMP
+add_executable(n-queens-openMP.out
   ${OMP_SRC}
 )
