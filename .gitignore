@@ -2,7 +2,6 @@
 *~
 
 # CMake files
-Makefile
 *.cmake
 CMakeCache.txt
 CMakeFiles/
