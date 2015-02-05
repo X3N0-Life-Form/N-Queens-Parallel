@@ -1,5 +1,6 @@
 # Misc
 *~
+callgrind.out.*
 
 # CMake files
 *.cmake
