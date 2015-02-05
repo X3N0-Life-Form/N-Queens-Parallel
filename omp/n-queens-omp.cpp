@@ -13,6 +13,40 @@ int depth = 0;
 int maxDepth = 10000;
 
 
+std::string getRunTimeString(chrono::steady_clock::time_point beginTime, chrono::steady_clock::time_point endTime) {
+  std::string res;
+  std::chrono::steady_clock::duration diff = endTime - beginTime;
+  auto h = std::chrono::duration_cast<std::chrono::hours> (diff);
+  auto min = std::chrono::duration_cast<std::chrono::minutes> (diff);
+  auto sec = std::chrono::duration_cast<std::chrono::seconds> (diff);
+  auto ms = std::chrono::duration_cast<std::chrono::milliseconds> (diff);
+  auto ns = std::chrono::duration_cast<std::chrono::nanoseconds> (diff);
+  if (h.count() > 0) {
+    res.append(std::to_string(h.count()));
+    res.append("h ");
+  }
+  if (min.count() > 0) {
+    res.append(std::to_string(min.count() % 60));
+    res.append(" min ");
+  }
+  res.append(std::to_string(sec.count() % 60));
+  res.append(".");
+  if (ms.count() % 1000 < 100)
+    res.append("0");
+  if (ms.count() % 1000 < 10)
+    res.append("0");
+  res.append(std::to_string(ms.count() % 1000));
+  if (ms.count() == 0) {
+    if (ns.count() % 1000 < 100)
+      res.append("0");
+    if (ns.count() % 1000 < 10)
+      res.append("0");
+    res.append(std::to_string(ns.count() % 1000));
+  }
+  res.append(" sec");
+  return res;
+}
+
 void printBoard(int* queens) {
   for (int z = 0; z < size; z++) cout << queens[z] << " ";
   cout << endl;
@@ -135,14 +169,18 @@ int diagConflict(int difference, int iValue, int jValue) {
   return 0;
 }
 
-int calculateCost(int* queens) {
+int calculateCost(int* queens, int* conflicts = NULL) {
   int cost = 0;
+  int c_i = 0;
   for(int i = 0; i < size; i++){
     for (int j = i + 1 ; j < size ; j++){
       cost += diagConflict(j-i, queens[i], queens[j]) ;
-      cost += lineConflict(queens[i], queens[j]);
+      //cost += lineConflict(queens[i], queens[j]);
+      if (conflicts != NULL && (c_i == 0 || conflicts[c_i - 1] != i)) {
+	conflicts[c_i] = i;
+	c_i++;
+      }
     }
-    return cost;
   }
   return cost;
 }
@@ -175,7 +213,7 @@ void descent(int* queens) {
 
 void descent_it(int* queens) {
   for (int k = 0; k < 50; k++) {
-  //for (int i = 0; i < maxDepth; i++)
+  //for (int i = 0; i < 50 * 380; i++)
     omp_set_num_threads(380);
 #pragma omp parallel
     {
@@ -202,6 +240,61 @@ void descent_it(int* queens) {
   }
 }
 
+void descent_it_it(int* queens) {
+  for (int i = 0; i < 50 * 380; i++) {
+    int cost = calculateCost(queens);
+    if (cost > 0 && !stop) {
+      int q1 = rand() % size;
+      int q2 = rand() % size;
+      while (q2 == q1)  q2 = rand() % size;
+      swap(q1, q2, queens);
+      int tempCost = calculateCost(queens);
+      if (tempCost > cost) {
+	swap(q1, q2, queens);
+      } else {
+	cost = tempCost;
+      }
+      depth++;
+      //stop = shouldWeStop();
+      //cout << "depth=" << depth << "; cost=" << cost << endl;
+    } else {
+      //break;
+    }
+  }
+}
+
+void descent_it_conf(int* queens) {
+  for (int k = 0; k < 50; k++) {
+  //for (int i = 0; i < 50 * 380; i++)
+    omp_set_num_threads(380);
+#pragma omp parallel
+    {
+      int i = omp_get_thread_num();
+      int* conflicts = new int[size];
+      int cost = calculateCost(queens, conflicts);
+      if (cost > 0 && !stop) {
+	int q1 = conflicts[rand() % cost];
+	int q2 = rand() % size;
+	while (q2 == q1)  q2 = rand() % size;
+	swap(q1, q2, queens);
+	int tempCost = calculateCost(queens);
+	if (tempCost > cost) {
+	  swap(q1, q2, queens);
+	} else {
+	  cost = tempCost;
+	}
+	depth++;
+	//stop = shouldWeStop();
+	//cout << "depth=" << depth << "; cost=" << cost << endl;
+      } else {
+	//break;
+      }
+    }
+  }
+}
+
+
+
 int main(int argc, char** argv) {
   srand(1);
   if (argc > 1) {
@@ -211,23 +304,23 @@ int main(int argc, char** argv) {
   generateBoard(global_queens);
   printBoard(global_queens);
 
-
-  //chrono::steady_clock::time_point begin;
-  //chrono::steady_clock::time_point end;
+  std::chrono::steady_clock clock;
+  chrono::steady_clock::time_point begin;
+  chrono::steady_clock::time_point end;
   double time;
-  //begin = clock.now();
+  begin = clock.now();
 
   //search_exhaustive(global_queens, 0);
   descent_it(global_queens);
 
-  //end = clock.now();
+  end = clock.now();
 
   //time = (double) (end - begin) / CLOCKS_PER_SEC;
   
   cout << "\n\n\n";
   printBoard(global_queens);
   cout << "Final board with cost=" << calculateCost(global_queens) << ":\n";
-  //cout << "Runtime: " << time << " s" << endl;
+  cout << "Runtime: " << getRunTimeString(begin, end) << endl;
 
   delete[] global_queens;
 }
