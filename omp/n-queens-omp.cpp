@@ -1,11 +1,16 @@
 #include <omp.h>
 #include <cstdlib>
 #include <iostream>
+#include <chrono>
 
 using namespace std;
 
 int* global_queens;
 int size = 8;
+int level = 6;
+bool stop = false;
+int depth = 0;
+int maxDepth = 10000;
 
 
 void printBoard(int* queens) {
@@ -16,9 +21,10 @@ void printBoard(int* queens) {
 void generateBoard(int* queens) {
   omp_set_num_threads(size);
   cout << "Generating board of size=" << size << endl;
-#pragma omp parallel
+  //#pragma omp parallel
+  for (int i = 0; i < size; i++)
   {
-    int i = omp_get_thread_num();
+    //int i = omp_get_thread_num();
     queens[i] = i;
   }
 }
@@ -76,6 +82,126 @@ void swap(int q1, int q2, int* queens) {
   queens[q2] = tmp;
 }
 
+int* copyBoard(int* queens) {
+  int* nuBoard = new int[size];
+  for (int i = 0; i < size; i++) {
+    nuBoard[i] = queens[i];
+  }
+  return nuBoard;
+}
+
+void search_exhaustive(int* queens, int q) {
+  if (q == size) {
+    //stop
+    if (checkBoard(queens)) {
+      cout << "FINAL STOP:\t";
+      printBoard(queens);
+    }
+  } else {
+    for (int i = 0; i < size; i++) {
+      if (stop) return;
+      queens[q] = i;
+      if (!checkBoard(queens)) {
+	if (q < level) {
+	  int* nuBoard = copyBoard(queens);
+#pragma omp task 
+	  search_exhaustive(nuBoard, q+1);
+	} else {
+	  search_exhaustive(queens, q+1);
+	}
+      } else {
+	cout << "REGULAR STOP:\t";
+	printBoard(queens);
+	delete[] global_queens;
+	global_queens = queens;
+	stop = true;
+      }
+    }
+  }
+}
+
+
+int lineConflict(int iValue, int jValue) {
+  if (iValue == jValue){
+    return 1;
+  }
+  return 0;
+}
+
+int diagConflict(int difference, int iValue, int jValue) {
+  if (difference == abs(iValue - jValue)) {
+    return 1;
+  }
+  return 0;
+}
+
+int calculateCost(int* queens) {
+  int cost = 0;
+  for(int i = 0; i < size; i++){
+    for (int j = i + 1 ; j < size ; j++){
+      cost += diagConflict(j-i, queens[i], queens[j]) ;
+      cost += lineConflict(queens[i], queens[j]);
+    }
+    return cost;
+  }
+  return cost;
+}
+
+bool shouldWeStop() {
+  return depth >= maxDepth;
+}
+
+void descent(int* queens) {
+  int cost = calculateCost(queens);
+  if (cost > 0 && !stop) {
+    int q1 = rand() % size;
+    int q2 = rand() % size;
+    while (q2 == q1)  q2 = rand() % size;
+    swap(q1, q2, queens);
+    int tempCost = calculateCost(queens);
+    if (tempCost > cost) {
+      swap(q1, q2, queens);
+    } else {
+      cost = tempCost;
+    }
+    depth++;
+    stop = shouldWeStop();
+    //cout << "depth=" << depth << "; cost=" << cost << endl;
+    #pragma omp task
+    descent(queens);
+  }
+}
+
+
+void descent_it(int* queens) {
+  for (int k = 0; k < 50; k++) {
+  //for (int i = 0; i < maxDepth; i++)
+    omp_set_num_threads(380);
+#pragma omp parallel
+    {
+      int i = omp_get_thread_num();
+      int cost = calculateCost(queens);
+      if (cost > 0 && !stop) {
+	int q1 = rand() % size;
+	int q2 = rand() % size;
+	while (q2 == q1)  q2 = rand() % size;
+	swap(q1, q2, queens);
+	int tempCost = calculateCost(queens);
+	if (tempCost > cost) {
+	  swap(q1, q2, queens);
+	} else {
+	  cost = tempCost;
+	}
+	depth++;
+	//stop = shouldWeStop();
+	//cout << "depth=" << depth << "; cost=" << cost << endl;
+      } else {
+	//break;
+      }
+    }
+  }
+}
+
 int main(int argc, char** argv) {
   srand(1);
   if (argc > 1) {
@@ -86,19 +212,22 @@ int main(int argc, char** argv) {
   printBoard(global_queens);
 
 
-  clock_t begin, end;
+  //chrono::steady_clock::time_point begin;
+  //chrono::steady_clock::time_point end;
   double time;
-  begin = clock();
+  //begin = clock.now();
 
-  for (int i = 0; i < 10000; i++) {
-    
-  }
-  end = clock();
+  //search_exhaustive(global_queens, 0);
+  descent_it(global_queens);
 
-  time = (double) (end - begin) / CLOCKS_PER_SEC;
-  //cout << "Final board with cost=" << cost << ": ";
+  //end = clock.now();
+
+  //time = (double) (end - begin) / CLOCKS_PER_SEC;
+  
+  cout << "\n\n\n";
   printBoard(global_queens);
-  cout << "Runtime: " << time << " s" << endl;
+  cout << "Final board with cost=" << calculateCost(global_queens) << ":\n";
+  //cout << "Runtime: " << time << " s" << endl;
 
   delete[] global_queens;
 }
