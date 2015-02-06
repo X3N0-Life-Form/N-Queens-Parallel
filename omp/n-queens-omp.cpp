@@ -221,12 +221,13 @@ int main(int argc, char** argv) {
   global_queens = new int[size];
 
   generateBoard(global_queens);
-  int** boards = new int*[4];
+  int** boards = new int*[NUMBER_OF_THREADS];
   boards[0] = global_queens;
-  for (int i = 1; i < 4; i++) {
+  for (int i = 1; i < NUMBER_OF_THREADS; i++) {
     boards[i] = copyBoard(global_queens);
   }
-  int64_t* costs = new int64_t[4];
+  int64_t* costs = new int64_t[NUMBER_OF_THREADS];
+  for (int i = 0; i < NUMBER_OF_THREADS; i++) costs[i] = -1;
 
   switch (descent_type) {
   case STANDARD:
