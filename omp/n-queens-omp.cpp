@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <cstdint>
+#include <cstring>
 #include "../commons.h"
 
 using namespace std;
@@ -102,7 +103,7 @@ int64_t calculateCost(int* queens, int* conflicts = NULL) {
   return cost;
 }
 
-int64_t  updated_cost(int * queens, int index1, int index2) {
+int64_t updated_cost(int * queens, int index1, int index2) {
   int64_t  toReturn = 0;
   for(int i = 0; i < size; i++) {
     if (i!=index1) {
@@ -145,13 +146,41 @@ int64_t descent_it_it(int* queens) {
   return cost;
 }
 
+enum e_descent_t {
+  STANDARD,
+  PARALLEL
+};
+typedef e_descent_t e_descent;
 
+e_descent getDescentType(char* type) {
+  if (strcmp(type, "-s")) {
+    return STANDARD;
+  } else if (strcmp(type, "-p")) {
+    return PARALLEL;
+  } else {
+    return PARALLEL;
+  }
+}
 
 int main(int argc, char** argv) {
  // srand(1);
+  e_descent descent_type = PARALLEL;
   if (argc > 1) {
     size = atoi(argv[1]);
   }
+  if (argc > 2) {
+    descent_type = getDescentType(argv[2]);
+  }
+  // insert board & cost arrays here
+  switch (descent_type) {
+  case STANDARD:
+    //call regular descent here
+    break;
+  case PARALLEL:
+    //call parallel descent here
+    break;
+  }
+  // handle results here
 
   global_queens = new int[size];
 
