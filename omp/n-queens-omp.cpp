@@ -2,29 +2,13 @@
 #include <cstdlib>
 #include <iostream>
 #include <cstdint>
+#include "../commons.h"
 
 using namespace std;
 
 int* global_queens;
 int size = 8;
-int level = 6;
 
-
-void printBoard(int* queens) {
-  for (int z = 0; z < size; z++) cout << queens[z] << " ";
-  cout << endl;
-}
-
-void generateBoard(int* queens) {
-  omp_set_num_threads(size);
-  cout << "Generating board of size=" << size << endl;
-  //#pragma omp parallel
-  for (int i = 0; i < size; i++)
-  {
-    //int i = omp_get_thread_num();
-    queens[i] = i;
-  }
-}
 
 /**
  * @return true if the specified queen doesn't have any conflict.
