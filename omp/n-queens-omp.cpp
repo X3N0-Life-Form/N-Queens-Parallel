@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <chrono>
+#include <cstdint>
 
 using namespace std;
 
@@ -155,27 +156,27 @@ void search_exhaustive(int* queens, int q) {
 }
 
 
-int lineConflict(int iValue, int jValue) {
+int64_t  lineConflict(int iValue, int jValue) {
   if (iValue == jValue){
     return 1;
   }
   return 0;
 }
 
-int diagConflict(int difference, int iValue, int jValue) {
+int64_t  diagConflict(int difference, int iValue, int jValue) {
   if (difference == abs(iValue - jValue)) {
     return 1;
   }
   return 0;
 }
 
-int calculateCost(int* queens, int* conflicts = NULL) {
-  int cost = 0;
+int64_t calculateCost(int* queens, int* conflicts = NULL) {
+  int64_t  cost = 0;
   int c_i = 0;
   for(int i = 0; i < size; i++){
     for (int j = i + 1 ; j < size ; j++){
       cost += diagConflict(j-i, queens[i], queens[j]) ;
-      //cost += lineConflict(queens[i], queens[j]);
+      cost += lineConflict(queens[i], queens[j]);
       if (conflicts != NULL && (c_i == 0 || conflicts[c_i - 1] != i)) {
 	conflicts[c_i] = i;
 	c_i++;
@@ -210,27 +211,57 @@ void descent(int* queens) {
   }
 }
 
+int64_t  updated_cost(int * queens, int index1, int index2) {
+  int64_t  toReturn = 0;
+  for(int i = 0; i < size; i++) {
+    if (i!=index1) {
+      toReturn+= diagConflict(abs(i-index1), queens[index1], queens[i]);
+      toReturn+=lineConflict(queens[index1], queens[i]);
+    }
+    if (i!=index2) {
+      toReturn+= diagConflict(abs(i-index2), queens[index2], queens[i]);
+      toReturn+=lineConflict(queens[index2], queens[i]);
+    }
+  }
 
+  return toReturn;
+}
+
+/*
 void descent_it(int* queens) {
+ // int cost = calculateCost(queens);
+  
   for (int k = 0; k < 50; k++) {
   //for (int i = 0; i < 50 * 380; i++)
+    int cost = calculateCost(queens);
+    int cost2 = cost;
+   // cout << cost2 << " " << cost << endl;
+     if (cost == 0) break;
     omp_set_num_threads(380);
 #pragma omp parallel
     {
       int i = omp_get_thread_num();
-      int cost = calculateCost(queens);
+      //int cost = calculateCost(queens);
       if (cost > 0 && !stop) {
-	int q1 = rand() % size;
-	int q2 = rand() % size;
-	while (q2 == q1)  q2 = rand() % size;
-	swap(q1, q2, queens);
-	int tempCost = calculateCost(queens);
-	if (tempCost > cost) {
-	  swap(q1, q2, queens);
-	} else {
-	  cost = tempCost;
-	}
-	depth++;
+      	int q1 = rand() % size;
+      	int q2 = rand() % size;
+      	while (q2 == q1)  q2 = rand() % size;
+        cost2 = cost;
+        
+
+        cost2 -=updated_cost(queens, q1, q2);
+      	swap(q1, q2, queens);
+        cost2 +=updated_cost(queens, q1, q2);
+      	int tempCost = calculateCost(queens);
+        //cout << tempCost << " " << cost2 << endl;
+    //    if (tempCost != cost2) cout << " not" << endl;
+      	if (tempCost > cost) {
+      	  swap(q1, q2, queens);
+          cost2 = cost;
+      	} else {
+      	  cost = tempCost;
+      	}
+      	depth++;
 	//stop = shouldWeStop();
 	//cout << "depth=" << depth << "; cost=" << cost << endl;
       } else {
@@ -239,30 +270,34 @@ void descent_it(int* queens) {
     }
   }
 }
+*/
+int64_t descent_it_it(int* queens) {
+ 
+  int64_t cost = calculateCost(queens);
 
-void descent_it_it(int* queens) {
   for (int i = 0; i < 50 * 380; i++) {
-    int cost = calculateCost(queens);
     if (cost > 0 && !stop) {
       int q1 = rand() % size;
       int q2 = rand() % size;
       while (q2 == q1)  q2 = rand() % size;
+      int64_t tempCost = cost;
+      tempCost -= updated_cost(queens, q1, q2);
       swap(q1, q2, queens);
-      int tempCost = calculateCost(queens);
+      tempCost += updated_cost(queens, q1, q2);
+
       if (tempCost > cost) {
-	swap(q1, q2, queens);
+        	swap(q1, q2, queens);
       } else {
-	cost = tempCost;
+      	cost = tempCost;
       }
       depth++;
-      //stop = shouldWeStop();
-      //cout << "depth=" << depth << "; cost=" << cost << endl;
     } else {
-      //break;
+      break;
     }
   }
+  return cost;
 }
-
+/*
 void descent_it_conf(int* queens) {
   for (int k = 0; k < 50; k++) {
   //for (int i = 0; i < 50 * 380; i++)
@@ -292,17 +327,16 @@ void descent_it_conf(int* queens) {
     }
   }
 }
-
+*/
 
 
 int main(int argc, char** argv) {
-  srand(1);
+ // srand(1);
   if (argc > 1) {
     size = atoi(argv[1]);
   }
   global_queens = new int[size];
   generateBoard(global_queens);
-  printBoard(global_queens);
 
   std::chrono::steady_clock clock;
   chrono::steady_clock::time_point begin;
@@ -311,7 +345,7 @@ int main(int argc, char** argv) {
   begin = clock.now();
 
   //search_exhaustive(global_queens, 0);
-  descent_it(global_queens);
+  int64_t cost =  descent_it_it(global_queens);
 
   end = clock.now();
 
@@ -319,7 +353,7 @@ int main(int argc, char** argv) {
   
   cout << "\n\n\n";
   printBoard(global_queens);
-  cout << "Final board with cost=" << calculateCost(global_queens) << ":\n";
+  cout << "Final board with cost=" << cost << ":\n";
   cout << "Runtime: " << getRunTimeString(begin, end) << endl;
 
   delete[] global_queens;
