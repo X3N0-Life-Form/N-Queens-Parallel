@@ -198,9 +198,9 @@ enum e_descent_t {
 typedef e_descent_t e_descent;
 
 e_descent getDescentType(char* type) {
-  if (strcmp(type, "-s")) {
+  if (!strcmp(type,"-s")) {
     return STANDARD;
-  } else if (strcmp(type, "-p")) {
+  } else if (!strcmp(type, "-p")) {
     return PARALLEL;
   } else {
     return PARALLEL;
@@ -216,16 +216,7 @@ int main(int argc, char** argv) {
   if (argc > 2) {
     descent_type = getDescentType(argv[2]);
   }
-  // insert board & cost arrays here
-  switch (descent_type) {
-  case STANDARD:
-    //call regular descent here
-    break;
-  case PARALLEL:
-    //call parallel descent here
-    break;
-  }
-  // handle results here
+
 
   global_queens = new int[size];
 
@@ -235,18 +226,31 @@ int main(int argc, char** argv) {
   for (int i = 1; i < 4; i++) {
     boards[i] = copyBoard(global_queens);
   }
-
-  omp_set_num_threads(4);
   int64_t* costs = new int64_t[4];
+
+  switch (descent_type) {
+  case STANDARD:
+    cout << "Entering sequential descent..." << endl;
+    for (int i; i < NUMBER_OF_THREADS; i++) {
+      costs[i] =  descent_2(boards[i]);
+      if (costs[i] == 0) break;
+    }
+    break;
+  case PARALLEL:
+    cout << "Entering parallel descent..." << endl;
+    omp_set_num_threads(NUMBER_OF_THREADS);
 #pragma omp parallel
-  {
-    int tid = omp_get_thread_num();
-    costs[tid] =  descent_2(boards[tid]);
-    if (costs[tid] == 0) flase = true;
+    {
+      int tid = omp_get_thread_num();
+      costs[tid] =  descent_2(boards[tid]);
+      if (costs[tid] == 0) flase = true;
+    }
+    break;
   }
   
-  cout << "\n\n\n";
-  for (int i = 0; i < 4; i++) {
+
+  cout << "\n\n";
+  for (int i = 0; i < NUMBER_OF_THREADS; i++) {
     //printBoard(boards[i]);
     cout << "Final board with cost=" << costs[i] << ":\n";
   }
