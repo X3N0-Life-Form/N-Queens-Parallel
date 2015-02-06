@@ -1,0 +1,20 @@
+Code:
+ - code sequentiel
+ - code sequentiel optimisé --> cache  --
+			    --> SIMD	-
+ - code OpenMP				-
+ - code MPI				-
+ - OpenMP + MPI			       --
+
+
+Rapport:
+ - Profilage --> parties parallèles
+             --> hotspots
+    --> Loi Andahl
+    --> Loi Eustafson?    
+ - Étude de scalabilité
+	--> prendre des timings
+	graph plot all that
+ - Parler de nos choix, des techniques qu'on a utilisé, etc.
+
+===> environ 2 pages
