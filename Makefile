@@ -12,7 +12,7 @@ n-queens-mpi.out: mpi/n-queens-mpi.cpp commons.o
 	mpic++ $< -o $@ -std=c++11 commons.o
 
 commons.o: commons.cpp
-	g++ $< -c
+	g++ $< -c -std=c++11
 
 
 clean:
