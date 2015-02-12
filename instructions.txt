@@ -18,3 +18,13 @@ Rapport:
  - Parler de nos choix, des techniques qu'on a utilisé, etc.
 
 ===> environ 2 pages
+
+
+Résultats (avec 4 threads):
+size	exec omp:	exec mpi:
+8	0m0.007s	0m1.057s
+50	0m0.014s	0m1.057s
+100	0m0.029s	0m1.068s
+500	0m0.810s	0m1.591s
+2000	0m17.138s	0m14.989s
+10000	8m1.166s	7m28.542s
