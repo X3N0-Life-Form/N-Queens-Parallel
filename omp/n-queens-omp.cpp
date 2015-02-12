@@ -8,7 +8,7 @@ using namespace std;
 
 int* global_queens;
 int size = 8;
-
+bool flase = false;
 
 void shuffleBoard(int* queens) {
   omp_set_num_threads(size);
@@ -24,68 +24,9 @@ void shuffleQueen(int q, int* queens) {
   queens[q] = rand() % size;
 }
 
-
-
-bool flase = false;
-
-int64_t descent(int* queens) {
- 
-  int64_t cost = calculateCost(queens);
-  int q1 = 0;
-  int q2 = 0;
-
-  for (int i = 0; i < 1000000; i++) {
-    if (cost > 0 && !flase) {
-      q1 = rand() % size;
-      q2 = rand() % size;
-      while (q2 == q1)  q2 = rand() % size;
-      int64_t tempCost = cost;
-      tempCost -= updated_cost(queens, q1, q2);
-      swap(q1, q2, queens);
-      tempCost += updated_cost(queens, q1, q2);
-
-      if (tempCost > cost) {
-        	swap(q1, q2, queens);
-      } else {
-      	cost = tempCost;
-      }
-    } else {
-      break;
-    }
-  }
-  return cost;
+bool stop() {
+  return flase;
 }
-
-
-int64_t descent_2(int* queens) {
- 
-  int64_t cost = calculateCost(queens);
-  int q1 = 0;
-  int q2 = 0;
-
-  for (int i = 0; i < 1000000; i++) {
-    if (cost > 0 && !flase) {
-      if (cost > 3) q1 = rand() % size;
-      else q1 = getFirstConflict(queens);
-      q2 = rand() % size;
-      while (q2 == q1)  q2 = rand() % size;
-      int64_t tempCost = cost;
-      tempCost -= updated_cost(queens, q1, q2);
-      swap(q1, q2, queens);
-      tempCost += updated_cost(queens, q1, q2);
-
-      if (tempCost > cost) {
-          swap(q1, q2, queens);
-      } else {
-        cost = tempCost;
-      }
-    } else {
-      break;
-    }
-  }
-  return cost;
-}
-
 
 enum e_descent_t {
   STANDARD,
@@ -112,7 +53,6 @@ int main(int argc, char** argv) {
   if (argc > 2) {
     descent_type = getDescentType(argv[2]);
   }
-
 
   global_queens = new int[size];
 

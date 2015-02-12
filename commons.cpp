@@ -5,6 +5,7 @@
 using namespace std;
 
 extern int size; // declared in the n-queens main source files
+extern bool flase;
 
 void printBoard(int* queens) {
   for (int z = 0; z < size; z++) cout << queens[z] << " ";
@@ -87,7 +88,7 @@ int getFirstConflict(int* queens) {
   return -1;
 }
 
-int64_t calculateCost(int* queens, int* conflicts = NULL) {
+int64_t calculateCost(int* queens, int* conflicts) {
   int64_t  cost = 0;
   int c_i = 0;
   for(int i = 0; i < size; i++){
@@ -123,4 +124,68 @@ void swap(int q1, int q2, int* queens) {
   int tmp = queens[q1];
   queens[q1] = queens[q2];
   queens[q2] = tmp;
+}
+
+
+/////////////////////////
+/// Descent functions ///
+/////////////////////////
+
+int64_t descent(int* queens) {
+ 
+  int64_t cost = calculateCost(queens);
+  int q1 = 0;
+  int q2 = 0;
+
+  for (int i = 0; i < 1000000; i++) {
+    if (cost > 0 && !flase) {
+      q1 = rand() % size;
+      q2 = rand() % size;
+      while (q2 == q1)  q2 = rand() % size;
+      int64_t tempCost = cost;
+      tempCost -= updated_cost(queens, q1, q2);
+      swap(q1, q2, queens);
+      tempCost += updated_cost(queens, q1, q2);
+
+      if (tempCost > cost) {
+        	swap(q1, q2, queens);
+      } else {
+      	cost = tempCost;
+      }
+    } else {
+      break;
+    }
+  }
+  return cost;
+}
+
+extern bool stop();
+
+int64_t descent_2(int* queens) {
+ 
+  int64_t cost = calculateCost(queens);
+  int q1 = 0;
+  int q2 = 0;
+
+  for (int i = 0; i < 1000000; i++) {
+    if (cost > 0 && !stop()) {
+      if (cost > 3) q1 = rand() % size;
+      else q1 = getFirstConflict(queens);
+      q2 = rand() % size;
+      while (q2 == q1)  q2 = rand() % size;
+      int64_t tempCost = cost;
+      tempCost -= updated_cost(queens, q1, q2);
+      swap(q1, q2, queens);
+      tempCost += updated_cost(queens, q1, q2);
+
+      if (tempCost > cost) {
+          swap(q1, q2, queens);
+      } else {
+        cost = tempCost;
+      }
+    } else {
+      break;
+    }
+  }
+  return cost;
 }
