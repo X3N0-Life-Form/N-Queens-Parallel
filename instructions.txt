@@ -21,10 +21,16 @@ Rapport:
 
 
 Résultats (avec 4 threads):
-size	exec omp:	exec mpi:
-8	0m0.007s	0m1.057s
-50	0m0.014s	0m1.057s
-100	0m0.029s	0m1.068s
-500	0m0.810s	0m1.591s
-2000	0m17.138s	0m14.989s
-10000	8m1.166s	7m28.542s
+size	exec omp:		exec mpi:	exec sequ:
+8	0m0.007s		0m1.057s	0m0.002s
+50	0m0.014s		0m1.057s	0m0.012s
+100	0m0.029s		0m1.068s	0m0.023s
+500	0m0.810s		0m1.591s	0m0.451s
+2000	0m17.138s		0m14.989s	0m8.134s
+10000	8m1.166s		7m28.542s	15m54.587s
+
+execs 10k:
+	omp		mpi
+	7m51.880s	8m15.564s
+	7m37.784s	7m7.742s
+	7m45.069s	7m43.927s
